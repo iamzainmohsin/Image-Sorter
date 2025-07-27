@@ -23,6 +23,7 @@ ui_*.py
 # Qt Designer backup files
 # Qt Designer sometimes creates backup files, which you don't want to commit.
 *.ui~
+ui/
 
 # Logs and other files
 *.log
