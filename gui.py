@@ -1,7 +1,34 @@
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QPushButton, QWidget
 from ui.ui_main_window import Ui_MainWindow
+from ui.ui_images_container import Ui_imagesContainer
+from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtCore import Qt, QSize
+
+
+class Image_Viewer(QWidget, Ui_imagesContainer):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.image_paths = []
+        self.folder_paths = []
+        self.current_image_index = 0
+        self.current_folder_index = 0
+
+        self.nextImageButton.clicked.connect(self.nextImageButton)
+        
+
+
+
+
+
+
+
+
+
+
+
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
