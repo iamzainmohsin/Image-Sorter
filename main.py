@@ -11,9 +11,11 @@ class MainUI(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        
+        self.folder_paths = []
         self.current_folder_index = 0
         self.current_img_index = 0
-        
+
 
         # Connecting Buttons:
         self.ui.importFolderButton.clicked.connect(self.import_folder)
@@ -36,23 +38,34 @@ class MainUI(QMainWindow):
             return
 
         sub_folders = []
+
         for name in os.listdir(root_folder):
             full_path = os.path.join(root_folder, name)
             if os.path.isdir(full_path):
                 sub_folders.append(full_path)
 
-        self.folder_paths = sub_folders
-          
 
+        if not sub_folders:
+            print("Selected folder has no subfolders or images.")
+            return    
+
+        self.folder_paths = sub_folders
         self.collect_images_subfolders()
-        self.show_current_image()          
         
+        self.current_folder_index = 0
+        self.current_img_index = 0
+
+        self.show_current_image()
+        self.next_img_btn()
+        self.prev_img_btn()          
+        
+
+    
 
     def collect_images_subfolders(self):
         supported_ext = (".png", ".jpg", ".jpeg", ".raw")
-
         self.folder_images = {}
-
+        
         for folder in self.folder_paths:
             images = []
             for file in os.listdir(folder):
@@ -69,10 +82,21 @@ class MainUI(QMainWindow):
 
 
     def show_current_image(self):
-        current_folder = self.folder_paths[self.current_folder_index]
-        current_img = self.folder_images[current_folder]
-        current_img_path = current_img[self.current_img_index] 
+        if not self.folder_paths:
+            print("No folders available")
+            return
 
+        current_folder = self.folder_paths[self.current_folder_index]
+        img_list = self.folder_images.get(current_folder, [])
+
+        if not img_list:
+            self.image_display.clear()
+            print("No images in this folder.")
+            return 
+
+        self.current_img_index = max(0, min(self.current_img_index, len(img_list) - 1))
+
+        current_img_path = img_list[self.current_img_index]
         pixmap = QPixmap(current_img_path)
         target_size = pixmap.scaled(self.image_display.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.image_display.setPixmap(target_size)
@@ -82,21 +106,33 @@ class MainUI(QMainWindow):
 
 
 
-
-
-
-
     def next_fld_btn(self):
-        print("Next FOlder Button Clicked")
+        if self.current_folder_index < len(self.folder_paths) - 1:
+            self.current_folder_index += 1
+            self.current_img_index = 0
+            self.show_current_image()
 
     def prev_fld_btn(self):
-        print("Previous FOlder Button Clicked")
+        if self.current_folder_index > 0:
+            self.current_folder_index -= 1
+            self.current_img_index = 0
+            self.show_current_image()
 
     def next_img_btn(self):
-        print("Next Image Button Clicked")
+        current_folder = self.folder_paths[self.current_folder_index]
+        images = self.folder_images.get(current_folder, [])
+        
+        if self.current_img_index < len(images) - 1:
+            self.current_img_index += 1
+            self.show_current_image()
+        
+        
+        
 
     def prev_img_btn(self):
-        print("Previous Image Button Clicked")                     
+        if self.current_img_index > 0:
+            self.current_img_index -= 1
+            self.show_current_image()                         
 
     def select_img_btn(self):
         print("Select Image Button Clicked")
