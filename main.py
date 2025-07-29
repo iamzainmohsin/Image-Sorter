@@ -90,13 +90,20 @@ class MainUI(QMainWindow):
         img_list = self.folder_images.get(current_folder, [])
 
         if not img_list:
-            self.image_display.clear()
-            print("No images in this folder.")
+            print("Empty Folder")
             return 
+
+
+        self.ui.folder_label.setText(f"Folder: {os.path.basename(current_folder)}")
+
 
         self.current_img_index = max(0, min(self.current_img_index, len(img_list) - 1))
 
         current_img_path = img_list[self.current_img_index]
+        img_name = os.path.basename(current_img_path)
+        self.ui.image_label.setText(f"Image: ({self.current_img_index + 1} of {len(img_list)})")
+
+
         pixmap = QPixmap(current_img_path)
         target_size = pixmap.scaled(self.image_display.size(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.image_display.setPixmap(target_size)
