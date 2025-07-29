@@ -1,6 +1,7 @@
 # Ignore virtual environments
 .venv/
 venv/
+ignoredFiles/
 # Add other common virtual environment names you might use
 # like `env/`, `myenv/` etc., if you use them.
 
