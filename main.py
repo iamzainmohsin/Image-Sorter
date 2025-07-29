@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout,
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QSize, pyqtSlot
 from ui.ui_image_viewer import Ui_MainWindow
-from ImageGalleryLogic import ImageGalleyLogic
+from ignoredFiles.ImageGalleryLogic import ImageGalleyLogic
 
 class MainUI(QMainWindow):
     def __init__(self):
