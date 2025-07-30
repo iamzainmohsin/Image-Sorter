@@ -1,8 +1,9 @@
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QPushButton, QLabel, QWidget
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import Qt, QSize, pyqtSlot
+import shutil
+from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QPushButton, QLabel, QWidget, QListWidgetItem
+from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtCore import Qt, QSize
 from ui.ui_image_viewer import Ui_MainWindow
 from ignoredFiles.ImageGalleryLogic import ImageGalleyLogic
 
@@ -13,6 +14,9 @@ class MainUI(QMainWindow):
         self.ui.setupUi(self)
         
         self.folder_paths = []
+        self.selected_images = []
+        self.selected_images_thumbs = []
+        self.thumbnail_size = QSize(100, 100)
         self.current_folder_index = 0
         self.current_img_index = 0
 
@@ -25,7 +29,8 @@ class MainUI(QMainWindow):
         self.ui.prevImageButton.clicked.connect(self.prev_img_btn)
         self.ui.selectImageButton.clicked.connect(self.select_img_btn) 
         self.ui.saveButton.clicked.connect(self.save_img_btn)
-        self.ui.removeButton.clicked.connect(self.rmv_img_btn) 
+        self.ui.removeButton.clicked.connect(self.rmv_img_btn)
+        self.ui.selectedImagesList.itemClicked.connect(self.sidebar_item_clicked)
         self.image_display = self.ui.imagePlaceholderLabel
 
 
@@ -140,28 +145,72 @@ class MainUI(QMainWindow):
             self.show_current_image()    
 
 
-    def select_img_btn():
-        print("Selefct btn clicked") 
+    def select_img_btn(self):
+        current_folder = self.folder_paths[self.current_folder_index]
+        current_image = self.folder_images[current_folder][self.current_img_index]
+
+        if current_image not in self.selected_images:
+            self.selected_images.append(current_image)
+            print(f"Selected Image: {current_image}")
+        else:
+            print("Already Selected")
+        self.update_selected_thumbnails()        
+
+
+
+    def rmv_img_btn(self):
+        if hasattr(self, 'selected_sidebar_path') and self.selected_sidebar_path:
+            if self.selected_sidebar_path in self.selected_images:
+                self.selected_images.remove(self.selected_sidebar_path)
+                print(f"Removed Selection: {self.selected_sidebar_path}")
+                self.update_selected_thumbnails()
+                self.selected_sidebar_path = None
+            else:
+                print("No Image in selection")    
+
+
+    def save_img_btn(self):
+        if not self.selected_images:
+            print("No images have been selected")
+            return
         
-    def save_img_btn():
-         print("Save btn clicked")    
+        destination_folder = QFileDialog.getExistingDirectory(self, "Choose Destination Folder")
+        if not destination_folder:
+            print("Save cancelled")
+            return
+        
+        for image_path in self.selected_images:
+            file_name = os.path.basename(image_path)
+            destination_path = os.path.join(destination_folder, file_name)
+            shutil.copy(image_path, destination_path)
 
-    def rmv_img_btn():
-        print("Rmv Image btn")     
-                   
-
-
-
-
-
-
-
-
-
+        print(f"Saved {len(self.selected_images)} images to {destination_folder}")
+        self.selected_images.clear()
+        self.update_selected_thumbnails()    
 
 
-       
-  
+    def update_selected_thumbnails(self):
+        self.ui.selectedImagesList.clear()
+        for path in self.selected_images:
+            item = QListWidgetItem()
+            icon = QIcon(QPixmap(path). scaled(self.thumbnail_size, Qt.AspectRatioMode.KeepAspectRatio))
+            item.setIcon(icon)
+            item.setText(os.path.basename(path))
+            self.ui.selectedImagesList.addItem(item)
+
+    def sidebar_item_clicked(self, item):
+        self.selected_sidebar_path = None
+        img_name = item.text()
+        for path in self.selected_images:
+            if os.path.basename(path) == img_name:
+                self.selected_sidebar_path = path
+                print(f"Selected in sidebar: {path}")
+                break               
+
+     
+
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainUI()
