@@ -1,6 +1,6 @@
 import os
 
-class imagesManager:
+class ImagesManager:
     SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".raw")
 
     def __init__(self):
