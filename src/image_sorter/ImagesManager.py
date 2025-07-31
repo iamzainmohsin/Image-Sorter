@@ -1,5 +1,5 @@
 import os
-
+import shutil
 class ImagesManager:
     SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".raw")
 
@@ -7,7 +7,7 @@ class ImagesManager:
         self.folder_paths = []
         self.selected_images = []
         self.folder_images = {}
-        self.selected_images_thumbs = []
+        # self.selected_images_thumbs = []
         self.current_folder_index = 0
         self.current_img_index = 0
         self.selected_sidebar_path = None
@@ -23,11 +23,12 @@ class ImagesManager:
                         if os.path.isdir(os.path.join(root_folder, name))]
 
         if not sub_folders:
-            print("Selected folder has no subfolders or images.")
-            return False    
+            print("Empty folder selection")
+            return
 
         self.folder_paths = sub_folders
         self.collect_images()
+
         self.current_folder_index = 0
         self.current_img_index = 0
         return True
@@ -44,7 +45,7 @@ class ImagesManager:
                 self.folder_images[folder] = images
 
 
-    def show_current_image(self):
+    def get_current_image_path(self):
         if not self.folder_paths:
             return None
 
@@ -62,7 +63,7 @@ class ImagesManager:
     def next_fld_btn(self):
         if self.current_folder_index < len(self.folder_paths) - 1:
             self.current_folder_index += 1
-            self.current_img_index = 0
+            self.current_img_index = 0   
 
 
     def prev_fld_btn(self):
@@ -71,9 +72,14 @@ class ImagesManager:
             self.current_img_index = 0
 
 
+
     def next_img_btn(self):
         current_folder = self.folder_paths[self.current_folder_index]
         images = self.folder_images.get(current_folder, [])
+        
+        if not self.folder_paths:
+            print("No folders loaded.")
+            return
         
         if self.current_img_index < len(images) - 1:
             self.current_img_index += 1
@@ -83,17 +89,6 @@ class ImagesManager:
         if self.current_img_index > 0:
             self.current_img_index -= 1
 
-
-    def select_img_btn(self):
-        current_image = self.get_current_image_path()
-
-        if current_image not in self.selected_images:
-            self.selected_images.append(current_image)
-            print(f"Selected Image: {current_image}")
-        else:
-            print("Already Selected")
-
-
     def rmv_img_btn(self):
         if self.selected_sidebar_path in self.selected_images:
             self.selected_images.remove(self.selected_sidebar_path)
@@ -102,13 +97,24 @@ class ImagesManager:
         else:
             print("No Image in selection")
 
-    def handle_sidebar_click(self, item_name):
+
+    def save_images_to_folder(self, images, target_folder):
+        for path in images:
+            try:
+                shutil.copy(path, os.path.join(target_folder, os.path.basename(path)))
+            except Exception as e:
+                print(f"Error copying {path}: {e}")
+
+
+    def handle_sidebar_click(self, item):
+        item_name = item.text()
         for path in self.selected_images:
             if os.path.basename(path) == item_name:
                 self.selected_sidebar_path = path
                 print(f"Selected in sidebar: {path}")
                 break
 
+                    
 
     # The following methods should be triggered by GUI:
             
