@@ -1,19 +1,32 @@
-# Ignore virtual environments
-.venv/
-venv/
-ignoredFiles/
-# Add other common virtual environment names you might use
-# like `env/`, `myenv/` etc., if you use them.
+# CMake build
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+cmake_install.cmake
+Makefile
 
-# Python compiled files
+# Compiled modules
+*.so
+*.pyd
+*.dll
+*.o
+*.a
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
+ignoredFiles/
 
-# .Ui Converted files
-ui_*.py
+# Virtual environment
+.venv/
+.env
 
+# VS Code
+.vscode/
 
 # Logs and other files
 *.log
+
+# .Ui Converted files
+ui_*.py
