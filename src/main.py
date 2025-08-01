@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow
-from src.image_sorter.GuiHandler import GuiHandler
+from image_sorter.GuiHandler import GuiHandler
 
 def main():
     app = QApplication(sys.argv)
