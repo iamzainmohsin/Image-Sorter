@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QFileDialog, QListWidgetItem
 from PyQt6.QtGui import QPixmap, QIcon
 from PyQt6.QtCore import Qt, QSize
-from src.image_sorter.ImagesManager import ImagesManager
-from ignoredFiles.ui_image_viewer import Ui_MainWindow
+from image_sorter.ImagesManager import ImagesManager
+from .ui.ui_image_viewer import Ui_MainWindow
 import os
 
 class GuiHandler:
