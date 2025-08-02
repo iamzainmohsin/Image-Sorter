@@ -34,7 +34,7 @@ bool ImageProcessor::resizeImage(int maxWidth, int maxHeight) {
     int newWidth = static_cast<int>(originalWidth * scaleFactor);
     int newHeight = static_cast<int>(originalHeight * scaleFactor);
 
-    cv::resize(image, image, cv::Size(newWidth, newHeight));
+    cv::resize(image, image, cv::Size(newWidth, newHeight), 0, 0, cv::INTER_AREA);
     return true;
 }
 
