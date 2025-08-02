@@ -135,3 +135,30 @@ class ImagesManager:
     
     def get_current_image_index(self):
         return self.current_img_index
+    
+    #Preload Images in the background
+    def peek_next_img(self):
+        if not self.folder_paths:
+            return None
+
+        folder_path = self.folder_paths[self.current_folder_index]
+        images = self.folder_images.get(folder_path, [])
+        
+        index = self.current_img_index + 1
+        if index < len(images):
+            return images[index]
+        return None
+
+
+    def peek_prev_img(self):
+        if not self.folder_paths:
+            return None
+
+        folder_path = self.folder_paths[self.current_folder_index]
+        images = self.folder_images.get(folder_path, [])
+        
+        index = self.current_img_index - 1
+        if index >= 0:
+            return images[index]
+        return None
+

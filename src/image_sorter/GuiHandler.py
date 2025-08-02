@@ -5,6 +5,7 @@ from image_sorter.ImagesManager import ImagesManager
 from .ui.ui_image_viewer import Ui_MainWindow
 import cv2
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 from .cpp import image_utils
 import os
 
@@ -18,7 +19,8 @@ class GuiHandler:
         self.selected_sidebar_path = None
         self.image_display = self.ui.imagePlaceholderLabel
         self.processor = image_utils.ImageProcessor()
-        self.image_cache = {} 
+        self.image_cache = {}
+        self.executor = ThreadPoolExecutor(max_workers=2) 
         self.setup_connections()
 
     def setup_connections(self):
@@ -72,14 +74,18 @@ class GuiHandler:
 
         if image_path in self.image_cache:
             self.image_display.setPixmap(self.image_cache[image_path])
-        else:         
+        else:
             if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
                 np_img = self.processor.get_image_copy()
                 pixmap = self.cv_to_qpixmap(np_img)
                 self.image_cache[image_path] = pixmap
                 self.image_display.setPixmap(pixmap)
             else:
-                self.image_display.setText("Failed to process image")    
+                self.image_display.setText("Failed to process image")
+
+        # Preload next and previous
+        self.executor.submit(self.preload_images, self.image_manager.peek_next_img())
+        self.executor.submit(self.preload_images, self.image_manager.peek_prev_img())    
 
 
 
@@ -136,6 +142,7 @@ class GuiHandler:
             return
 
         self.image_manager.save_images_to_folder(self.image_manager.selected_images, target_folder)
+        
                      
 
     #C++ to python setup functions:
@@ -147,3 +154,18 @@ class GuiHandler:
     
         qimg = QImage(rgb_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
         return QPixmap.fromImage(qimg)                 
+    
+
+    #Multi Threading:
+    def preload_images(self, image_path):
+        if not image_path or image_path in self.image_cache:
+            return
+        
+        target_size = self.image_display.size()
+        label_width = target_size.width()
+        label_height = target_size.height()
+
+        if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
+                np_img = self.processor.get_image_copy()
+                pixmap = self.cv_to_qpixmap(np_img)
+                self.image_cache[image_path] = pixmap
