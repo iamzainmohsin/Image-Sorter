@@ -65,15 +65,14 @@ class GuiHandler:
 
 
         processor = image_utils.ImageProcessor()
-        if processor.load_image(image_path) and processor.resize_image(0.5):
+        target_size = self.image_display.size()
+        label_width = target_size.width()
+        label_height = target_size.height()
+
+        if processor.load_image(image_path) and processor.resize_image(label_width, label_height):
             np_img = processor.get_image_copy()
             pixmap = self.cv_to_qpixmap(np_img)
-            scaled = pixmap.scaled(
-            self.image_display.size(),
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
-            self.image_display.setPixmap(scaled)
+            self.image_display.setPixmap(pixmap)
         else:
             self.image_display.setText("Failed to process image")    
 
@@ -136,7 +135,10 @@ class GuiHandler:
 
     #C++ to python setup functions:
     def cv_to_qpixmap(self, cv_img):
-        height, width, channels = cv_img.shape
-        bytes_per_line = channels * width
-        qimg = QImage(cv_img.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
-        return QPixmap.fromImage(qimg.rgbSwapped())                 
+        rgb_image = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
+
+        height, width, channels = rgb_image.shape
+        bytes_per_line = rgb_image.strides[0]
+    
+        qimg = QImage(rgb_image.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+        return QPixmap.fromImage(qimg)                 

@@ -14,20 +14,27 @@ bool ImageProcessor::loadImage(const string& path) {
     return true;
 }
 
-bool ImageProcessor::resizeImage(double scaleFactor) {
+bool ImageProcessor::resizeImage(int maxWidth, int maxHeight) {
     if (image.empty()) {
         cerr << "No image loaded to resize" << endl;
         return false;
     }
 
-    int newWidth = static_cast<int>(image.cols * scaleFactor);
-    int newHeight = static_cast<int>(image.rows * scaleFactor);
-    cv::Size newSize(newWidth, newHeight);
+    int originalWidth = image.cols;
+    int originalHeight = image.rows;
 
-    cv::Mat resized;
-    cv::resize(image, resized, newSize);
+    if (originalWidth <= maxWidth && originalHeight <= maxHeight){
+        return true;
+    }
+    
+    double widthScale = static_cast<double>(maxWidth) / originalWidth;
+    double heightScale = static_cast<double>(maxHeight) / originalHeight;
+    double scaleFactor = std::min(widthScale, heightScale);
 
-    image = resized;
+    int newWidth = static_cast<int>(originalWidth * scaleFactor);
+    int newHeight = static_cast<int>(originalHeight * scaleFactor);
+
+    cv::resize(image, image, cv::Size(newWidth, newHeight));
     return true;
 }
 

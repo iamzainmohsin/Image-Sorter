@@ -11,7 +11,7 @@ private:
 
 public:
     bool loadImage(const std::string& path);
-    bool resizeImage(double scaleFactor);
+    bool resizeImage(int maxWidth, int maxHeight);
     bool saveImage(const std::string& outputPath);
     cv::Mat getImageCopy() const;
 };
