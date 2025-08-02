@@ -1,5 +1,5 @@
 # CMake build
-src/cpp/build/
+build/
 /CMakeFiles/
 /CMakeCache.txt
 cmake_install.cmake
