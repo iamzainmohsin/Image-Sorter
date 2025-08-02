@@ -1,8 +1,11 @@
 from PyQt6.QtWidgets import QFileDialog, QListWidgetItem
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QPixmap, QIcon, QImage
 from PyQt6.QtCore import Qt, QSize
 from image_sorter.ImagesManager import ImagesManager
 from .ui.ui_image_viewer import Ui_MainWindow
+import cv2
+import numpy as np
+from .cpp import image_utils
 import os
 
 class GuiHandler:
@@ -60,13 +63,24 @@ class GuiHandler:
         total = self.image_manager.get_current_folder_image_count()
         self.ui.image_label.setText(f"Image: ({index + 1} of {total})")
 
-        pixmap = QPixmap(image_path)
-        scaled = pixmap.scaled(
+
+        processor = image_utils.ImageProcessor()
+        if processor.load_image(image_path) and processor.resize_image(0.5):
+            np_img = processor.get_image_copy()
+            pixmap = self.cv_to_qpixmap(np_img)
+            scaled = pixmap.scaled(
             self.image_display.size(),
             Qt.AspectRatioMode.KeepAspectRatio,
             Qt.TransformationMode.SmoothTransformation
         )
-        self.image_display.setPixmap(scaled)
+            self.image_display.setPixmap(scaled)
+        else:
+            self.image_display.setText("Failed to process image")    
+
+
+
+
+
 
 
     def next_folder(self):
@@ -119,3 +133,10 @@ class GuiHandler:
 
         self.image_manager.save_images_to_folder(self.image_manager.selected_images, target_folder)
                      
+
+    #C++ to python setup functions:
+    def cv_to_qpixmap(self, cv_img):
+        height, width, channels = cv_img.shape
+        bytes_per_line = channels * width
+        qimg = QImage(cv_img.data, width, height, bytes_per_line, QImage.Format.Format_RGB888)
+        return QPixmap.fromImage(qimg.rgbSwapped())                 
