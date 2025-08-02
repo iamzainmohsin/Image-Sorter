@@ -16,7 +16,9 @@ class GuiHandler:
         self.image_manager = ImagesManager()
         self.thumbnail_size = QSize(100, 100)
         self.selected_sidebar_path = None
-        self.image_display = self.ui.imagePlaceholderLabel 
+        self.image_display = self.ui.imagePlaceholderLabel
+        self.processor = image_utils.ImageProcessor()
+        self.image_cache = {} 
         self.setup_connections()
 
     def setup_connections(self):
@@ -63,18 +65,21 @@ class GuiHandler:
         total = self.image_manager.get_current_folder_image_count()
         self.ui.image_label.setText(f"Image: ({index + 1} of {total})")
 
-
-        processor = image_utils.ImageProcessor()
+        #Image Processed through C++
         target_size = self.image_display.size()
         label_width = target_size.width()
         label_height = target_size.height()
 
-        if processor.load_image(image_path) and processor.resize_image(label_width, label_height):
-            np_img = processor.get_image_copy()
-            pixmap = self.cv_to_qpixmap(np_img)
-            self.image_display.setPixmap(pixmap)
-        else:
-            self.image_display.setText("Failed to process image")    
+        if image_path in self.image_cache:
+            self.image_display.setPixmap(self.image_cache[image_path])
+        else:         
+            if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
+                np_img = self.processor.get_image_copy()
+                pixmap = self.cv_to_qpixmap(np_img)
+                self.image_cache[image_path] = pixmap
+                self.image_display.setPixmap(pixmap)
+            else:
+                self.image_display.setText("Failed to process image")    
 
 
 
