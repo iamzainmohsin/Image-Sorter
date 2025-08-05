@@ -20,7 +20,7 @@ class GuiHandler:
         self.image_display = self.ui.imagePlaceholderLabel
         self.processor = image_utils.ImageProcessor()
         self.image_cache = {}
-        self.executor = ThreadPoolExecutor(max_workers=2) 
+        self.executor = ThreadPoolExecutor(max_workers=3) 
         self.setup_connections()
 
     def setup_connections(self):
@@ -73,24 +73,24 @@ class GuiHandler:
         label_height = target_size.height()
 
         if image_path in self.image_cache:
-            self.image_display.setPixmap(self.image_cache[image_path])
+            current_pixmap = self.image_cache[image_path]
         else:
             if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
                 np_img = self.processor.get_image_copy()
-                pixmap = self.cv_to_qpixmap(np_img)
-                self.image_cache[image_path] = pixmap
-                self.image_display.setPixmap(pixmap)
+                current_pixmap = self.cv_to_qpixmap(np_img)
+                self.image_cache[image_path] = current_pixmap
             else:
                 self.image_display.setText("Failed to process image")
+                return
 
-        # Preload next and previous
-        self.executor.submit(self.preload_images, self.image_manager.peek_next_img())
-        self.executor.submit(self.preload_images, self.image_manager.peek_prev_img())    
+        self.image_display.setPixmap(current_pixmap)
 
-
-
-
-
+        # Preload next
+        next_path = self.image_manager.peek_next_img()
+        if next_path and next_path not in self.image_cache:
+            self.executor.submit(self.preload_images, next_path)
+        
+    
 
 
     def next_folder(self):
@@ -161,11 +161,9 @@ class GuiHandler:
         if not image_path or image_path in self.image_cache:
             return
         
-        target_size = self.image_display.size()
-        label_width = target_size.width()
-        label_height = target_size.height()
+        label_width, label_height = 640, 360 
 
         if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
-                np_img = self.processor.get_image_copy()
-                pixmap = self.cv_to_qpixmap(np_img)
-                self.image_cache[image_path] = pixmap
+            np_img = self.processor.get_image_copy()
+            pixmap = self.cv_to_qpixmap(np_img)
+            self.image_cache[image_path] = pixmap
