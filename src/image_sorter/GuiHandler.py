@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QFileDialog, QListWidgetItem
 from PyQt6.QtGui import QPixmap, QIcon, QImage
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, QTimer
 from image_sorter.ImagesManager import ImagesManager
 from .ui.ui_image_viewer import Ui_MainWindow
 import cv2
@@ -20,7 +20,9 @@ class GuiHandler:
         self.image_display = self.ui.imagePlaceholderLabel
         self.processor = image_utils.ImageProcessor()
         self.image_cache = {}
-        self.executor = ThreadPoolExecutor(max_workers=3) 
+        self.executor = ThreadPoolExecutor(max_workers=3)
+        self.thumbnail_cache = {}
+        self.thumbnail_executor = ThreadPoolExecutor(max_workers=2)
         self.setup_connections()
 
     def setup_connections(self):
@@ -67,7 +69,8 @@ class GuiHandler:
         total = self.image_manager.get_current_folder_image_count()
         self.ui.image_label.setText(f"Image: ({index + 1} of {total})")
 
-        #Image Processed through C++
+        
+        # #Image Processed through C++
         target_size = self.image_display.size()
         label_width = target_size.width()
         label_height = target_size.height()
@@ -89,6 +92,7 @@ class GuiHandler:
         next_path = self.image_manager.peek_next_img()
         if next_path and next_path not in self.image_cache:
             self.executor.submit(self.preload_images, next_path)
+    
         
     
 
@@ -102,8 +106,20 @@ class GuiHandler:
         self.show_current_image()
 
     def next_image(self):
-        self.image_manager.next_img_btn()
-        self.show_current_image()
+        next_path = self.image_manager.peek_next_img()
+
+        if next_path and next_path not in self.image_cache:
+            self.ui.nextImageButton.setEnabled(False)
+
+            QTimer.singleShot(50, lambda: (
+                self.ui.nextImageButton.setEnabled(True),
+                self.image_manager.next_img_btn(),
+                self.show_current_image()
+            ))
+        else:
+            self.image_manager.next_img_btn()
+            self.show_current_image()
+    
         
         
     def prev_image(self):
@@ -116,7 +132,17 @@ class GuiHandler:
 
         if current_path and current_path not in self.image_manager.selected_images:
             self.image_manager.selected_images.append(current_path)
-            self.update_selected_thumbnails()  
+
+            item = QListWidgetItem("Loading...")
+            item.setData(Qt.ItemDataRole.UserRole, current_path)
+            self.ui.selectedImagesList.addItem(item)
+
+            if current_path in self.thumbnail_cache:
+                # Apply immediately from cache
+                self.apply_thumbnail(current_path, self.thumbnail_cache[current_path])
+            else:
+                # Load in background
+                self.thumbnail_executor.submit(self.load_thumbnail, current_path)  
 
     
 
@@ -127,14 +153,47 @@ class GuiHandler:
 
     def update_selected_thumbnails(self):
         self.ui.selectedImagesList.clear()
+
         for path in self.image_manager.selected_images:
             item = QListWidgetItem()
-            icon = QIcon(QPixmap(path). scaled(self.thumbnail_size, Qt.AspectRatioMode.KeepAspectRatio))
-            item.setIcon(icon)
-            item.setText(os.path.basename(path))
+            item.setData(Qt.ItemDataRole.UserRole, path)
+
+            if path in self.thumbnail_cache:
+                item.setIcon(QIcon(self.thumbnail_cache[path]))
+                item.setText(os.path.basename(path))
+            else:
+                item.setText("Loading...")
+                self.thumbnail_executor.submit(self.load_thumbnail, path)
+
             self.ui.selectedImagesList.addItem(item)
 
 
+    def load_thumbnail(self, path):
+        pixmap = QPixmap(path).scaled(
+            self.thumbnail_size,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
+        )
+
+        if not pixmap.isNull():
+            self.thumbnail_cache[path] = pixmap
+
+        QTimer.singleShot(0, lambda: self.apply_thumbnail(path, pixmap))
+
+
+
+    def apply_thumbnail(self, path, pixmap):
+        for i in range(self.ui.selectedImagesList.count()):
+            item = self.ui.selectedImagesList.item(i)
+            stored_path = item.data(Qt.ItemDataRole.UserRole)
+
+            if stored_path == path:
+                item.setIcon(QIcon(pixmap))
+                item.setText(os.path.basename(path))
+                break
+
+
+    
     def save_selected_images(self):
         target_folder = QFileDialog.getExistingDirectory(self.main_window, "Select Folder to Save Images")
 
@@ -160,10 +219,13 @@ class GuiHandler:
     def preload_images(self, image_path):
         if not image_path or image_path in self.image_cache:
             return
-        
-        label_width, label_height = 640, 360 
 
+        target_size = self.image_display.size()
+        label_width = target_size.width()
+        label_height = target_size.height()
+ 
         if self.processor.load_image(image_path) and self.processor.resize_image(label_width, label_height):
             np_img = self.processor.get_image_copy()
             pixmap = self.cv_to_qpixmap(np_img)
             self.image_cache[image_path] = pixmap
+        
