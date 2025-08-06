@@ -1,5 +1,6 @@
 import os
 import shutil
+
 class ImagesManager:
     SUPPORTED_EXTENSIONS = (".png", ".jpg", ".jpeg", ".raw")
 
@@ -7,7 +8,6 @@ class ImagesManager:
         self.folder_paths = []
         self.selected_images = []
         self.folder_images = {}
-        # self.selected_images_thumbs = []
         self.current_folder_index = 0
         self.current_img_index = 0
         self.selected_sidebar_path = None
@@ -60,20 +60,19 @@ class ImagesManager:
         return img_list[self.current_img_index]
 
 
-    def next_fld_btn(self):
+    def next_folder(self):
         if self.current_folder_index < len(self.folder_paths) - 1:
             self.current_folder_index += 1
             self.current_img_index = 0   
 
 
-    def prev_fld_btn(self):
+    def prev_folder(self):
         if self.current_folder_index > 0:
             self.current_folder_index -= 1
             self.current_img_index = 0
 
 
-
-    def next_img_btn(self):
+    def next_image(self):
         current_folder = self.folder_paths[self.current_folder_index]
         images = self.folder_images.get(current_folder, [])
         
@@ -85,11 +84,12 @@ class ImagesManager:
             self.current_img_index += 1
 
 
-    def prev_img_btn(self):
+    def prev_image(self):
         if self.current_img_index > 0:
             self.current_img_index -= 1
 
-    def rmv_img_btn(self):
+
+    def remove_image(self):
         if self.selected_sidebar_path in self.selected_images:
             self.selected_images.remove(self.selected_sidebar_path)
             print(f"Removed Selection: {self.selected_sidebar_path}")
@@ -104,20 +104,23 @@ class ImagesManager:
                 shutil.copy(path, os.path.join(target_folder, os.path.basename(path)))
             except Exception as e:
                 print(f"Error copying {path}: {e}")
+ 
+ 
+    #Preload Images in the background
+    def peek_next_img(self):
+        if not self.folder_paths:
+            return None
+
+        folder_path = self.folder_paths[self.current_folder_index]
+        images = self.folder_images.get(folder_path, [])
+        
+        index = self.current_img_index + 1
+        if index < len(images):
+            return images[index]
+        return None
 
 
-    def handle_sidebar_click(self, item):
-        item_name = item.text()
-        for path in self.selected_images:
-            if os.path.basename(path) == item_name:
-                self.selected_sidebar_path = path
-                print(f"Selected in sidebar: {path}")
-                break
-
-                    
-
-    # The following methods should be triggered by GUI:
-            
+    # The following methods should be triggered by GUI:       
     def clear_selection(self):
         return self.selected_images.clear()            
     
@@ -137,17 +140,6 @@ class ImagesManager:
         return self.current_img_index
     
 
-    #Preload Images in the background
-    def peek_next_img(self):
-        if not self.folder_paths:
-            return None
-
-        folder_path = self.folder_paths[self.current_folder_index]
-        images = self.folder_images.get(folder_path, [])
-        
-        index = self.current_img_index + 1
-        if index < len(images):
-            return images[index]
-        return None
+    
 
 
