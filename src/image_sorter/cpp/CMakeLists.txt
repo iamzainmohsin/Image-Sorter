@@ -12,6 +12,7 @@ include_directories(include)
 pybind11_add_module(image_utils
     image_utils.cpp
     ImageProcessor.cpp
+    thumbnailResizer.cpp
 )
 
 target_link_libraries(image_utils PRIVATE ${OpenCV_LIBS})
