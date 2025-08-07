@@ -15,3 +15,4 @@ import os
 from image_sorter.backend.ImagesLogicManager import ImagesManager
 from image_sorter.gui.PYQT_Ui_File.ui_image_viewer import Ui_MainWindow
 from image_sorter.cpp import image_utils
+from image_sorter.cpp import thumbnail_utils
