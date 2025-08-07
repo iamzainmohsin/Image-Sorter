@@ -2,7 +2,7 @@
 #include <pybind11/stl.h>
 #include <opencv2/opencv.hpp>
 #include "ImageProcessor.h"
-#include "thumbnailResizer.h"
+
 
 namespace py = pybind11;
 
@@ -26,9 +26,5 @@ PYBIND11_MODULE(image_utils, m){
                 buffer.data()
             );
         });
-        m.def("thumbnail_resize", &ImageProcessing::resizeAndEncodeWebp,
-            py::arg("imagePath"),
-            py::arg("width"),
-            py::arg("height"),
-            "Resizes an image and encode to WebP format for thumbnail. Returns bytes");
+   
 }

@@ -56,3 +56,16 @@ bool ImageProcessor::saveImage(const string& outputPath) {
 cv::Mat ImageProcessor::getImageCopy() const {
     return image.clone();
 }
+
+
+cv::Mat ImageProcessor::getThumbnailMat(const std::string& imagePath, int width, int height) {
+    cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
+    if(image.empty()){
+        throw std::runtime_error("Failed to load image " + imagePath);
+    }
+
+    cv::Mat resized;
+    cv::resize(image, resized, cv::Size(width, height), 0, 0, cv::INTER_AREA);
+
+    return resized;
+}

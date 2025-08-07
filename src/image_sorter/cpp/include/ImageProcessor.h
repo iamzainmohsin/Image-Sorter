@@ -14,6 +14,7 @@ public:
     bool resizeImage(int maxWidth, int maxHeight);
     bool saveImage(const std::string& outputPath);
     cv::Mat getImageCopy() const;
+    cv::Mat getThumbnailMat(const std::string& imagePath, int width, int height);
 };
 
 #endif 
