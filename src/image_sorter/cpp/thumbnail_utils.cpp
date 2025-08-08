@@ -4,21 +4,28 @@
 
 namespace py = pybind11;
 
-py::array_t<uint8_t> get_resized_thumbnail(const std::string& imagePath, int maxWidth, int maxHeight) {
-    cv::Mat resized = ThumbnailResizer::resize(imagePath, maxWidth, maxHeight);
+py::array_t<unsigned char> resize_thumbnail(const std::string &image_path, int width, int height) {
+    cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+    if (img.empty()) {
+        throw std::runtime_error("Failed to load image: " + image_path);
+    }
 
-    // Allocate new buffer and copy data
-    std::vector<uint8_t> buffer(resized.data, resized.data + resized.total() * resized.elemSize());
+    cv::Mat resized;
+    cv::resize(img, resized, cv::Size(width, height));
 
-    return py::array_t<uint8_t>(
-        { resized.rows, resized.cols, resized.channels() },
-        { static_cast<ssize_t>(resized.step[0]),
-          static_cast<ssize_t>(resized.step[1]),
-          static_cast<ssize_t>(1) },
-        buffer.data()
+    // Ensure continuous memory layout for NumPy
+    if (!resized.isContinuous()) {
+        resized = resized.clone();
+    }
+
+    return py::array_t<unsigned char>(
+        {resized.rows, resized.cols, resized.channels()},
+        {resized.step[0], resized.step[1], sizeof(unsigned char)},
+        resized.data
     );
 }
 
+
 PYBIND11_MODULE(thumbnail_utils, m) {
-    m.def("get_resized_thumbnail", &get_resized_thumbnail, "Resize image and return as NumPy array");
+    m.def("get_resized_thumbnail", &resize_thumbnail, "Resize image and return as NumPy array");
 }
