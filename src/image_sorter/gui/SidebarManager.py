@@ -1,4 +1,5 @@
-from imports import os, QIcon, QPixmap, Qt, QImage,QTimer, QListWidget, QListWidgetItem, ThreadPoolExecutor, QFileDialog, QByteArray, image_utils, thumbnail_utils,np, cv2 
+from imports import os, QIcon, ThumbnailTask, Qt, QImage, QListWidget, QListWidgetItem, QThreadPool, QFileDialog, thumbnail_utils
+
 
 class SidebarManager:
     def __init__(self, main_window, image_manager, list_widget:QListWidget):
@@ -7,7 +8,6 @@ class SidebarManager:
         self.main_window = main_window
         self.thumbnail_cache = {}
         self.thumbnail_size = 30
-        self.executor = ThreadPoolExecutor(max_workers=3)
 
     #Removes the image:
     def remove_image(self):
@@ -41,29 +41,56 @@ class SidebarManager:
         self.image_manager.selected_images.clear()
         self.list_widget.clear()    
 
+
     #Selecting Images:
     def add_images(self):
         file_path = self.image_manager.get_current_image_path()
+        
 
         if not file_path:
             print("No selected images to add")
             return
 
-        if file_path not in self.image_manager.selected_images:
-            self.image_manager.selected_images.append(file_path)
+        if file_path in self.image_manager.selected_images:
+            print(f"Image already selected: {file_path}")
+            return
+        
+        self.image_manager.selected_images.append(file_path)
+ 
+        #Placeholder item
+        file_name = os.path.basename(file_path)
+        part = file_name[:20] + "...."
+        placeholder_item = QListWidgetItem(f"Loading Image... {part}")
+        placeholder_item.setData(Qt.ItemDataRole.UserRole, file_path)
+        self.list_widget.addItem(placeholder_item)
+        self.thumbnail_cache[file_path] = placeholder_item
 
-        try:
+        #Launch worker
+        task = ThumbnailTask(file_path, self.thumbnail_size)
+        task.signals.finished.connect(self._on_thumnail_ready)
+        task.signals.error.connect(self.on_thumbnail_error)
+        QThreadPool.globalInstance().start(task)
 
-            arr = thumbnail_utils.get_resized_thumbnail(file_path, self.thumbnail_size, self.thumbnail_size)
-            qImg = QImage(
-                arr.data, arr.shape[1], arr.shape[0], arr.strides[0],
-                QImage.Format.Format_BGR888
-            )
-            pixmap = QPixmap.fromImage(qImg)
-            item = QListWidgetItem(QIcon(pixmap), os.path.basename(file_path))
-            item.setData(Qt.ItemDataRole.UserRole, file_path)
-            self.list_widget.addItem(item)
 
-        except Exception as e:
-            print(f"Failed to add thumbnail for {file_path}: {e}")
+    def _on_thumnail_ready(self, file_path, pixmap, elapsed_time):
+        if file_path in self.thumbnail_cache:
+            item = self.thumbnail_cache[file_path]
+            item.setIcon(QIcon(pixmap))
+            item.setText(os.path.basename(file_path))
+            del self.thumbnail_cache[file_path]
+        print(f"Thumbnail for {file_path} ready in {elapsed_time:.3f} seconds")
+
+
+
+            # item = QListWidgetItem(QIcon(pixmap), os.path.basename(file_path))
+            # item.setData(Qt.ItemDataRole.UserRole, file_path)
+            # self.list_widget.addItem(item)
+            
+
+    def on_thumbnail_error(self, file_path, error_msg):
+        if file_path in self.thumbnail_cache:
+            item = self.thumbnail_cache[file_path]
+            item.setText(f"{os.path.basename(file_path)} (Failed)")
+            del self.thumbnail_cache[file_path]
+        print(f"Failed to add thumbnail for {file_path}: {error_msg}")       
     
