@@ -27,6 +27,10 @@ class SidebarManager:
 
     #Saves the image:
     def save_images(self):
+        if self.list_widget.count() == 0:
+            print("No items to save")
+            return
+        
         target_folder = QFileDialog.getExistingDirectory(self.main_window, "Select Folder to Save Images")
 
         if not target_folder:
@@ -79,14 +83,8 @@ class SidebarManager:
             item.setText(os.path.basename(file_path))
             del self.thumbnail_cache[file_path]
         print(f"Thumbnail for {file_path} ready in {elapsed_time:.3f} seconds")
-
-
-
-            # item = QListWidgetItem(QIcon(pixmap), os.path.basename(file_path))
-            # item.setData(Qt.ItemDataRole.UserRole, file_path)
-            # self.list_widget.addItem(item)
-            
-
+          
+          
     def on_thumbnail_error(self, file_path, error_msg):
         if file_path in self.thumbnail_cache:
             item = self.thumbnail_cache[file_path]

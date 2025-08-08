@@ -73,6 +73,8 @@ class ImagesManager:
 
 
     def next_image(self):
+        if not self.folder_images: return
+        
         current_folder = self.folder_paths[self.current_folder_index]
         images = self.folder_images.get(current_folder, [])
         
