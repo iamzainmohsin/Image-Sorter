@@ -1,0 +1,29 @@
+QMainWindow{
+    background-color: #131720;
+}
+
+QPushButton {
+    font-size: 15px;
+    color: white;
+    background-color: #273f65;
+    border: 2px solid #172e53;
+    border-radius: 2px;
+    padding: 5px;
+}
+
+#imagePlaceholderLabel{
+    font-size: 15px;
+    background-color: #000000;
+    border: 2px solid #273f65;
+    border-radius: 2px;
+}
+
+#selectedImagesList{
+    background-color: transparent;
+    border: 2px solid #273f65;
+    border-radius: 2px;
+}
+
+QPushButton::hover{
+    background-color: #5074ad;
+}
