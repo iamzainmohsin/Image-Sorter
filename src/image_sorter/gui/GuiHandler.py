@@ -9,8 +9,8 @@ class GuiHandler:
         self.ui.setupUi(main_window)
         self.main_window = main_window
         self.image_manager = ImagesManager()
-        self.sidebar = SidebarManager(self.main_window, self.image_manager, self.ui.selectedImagesList)
-        self.navigation = ImageDisplay(self.main_window, self.image_manager, self.ui)
+        self.sidebar = SidebarManager(self.ui.statusbar, self.main_window, self.image_manager, self.ui.selectedImagesList)
+        self.navigation = ImageDisplay(self.ui.statusbar, self.main_window, self.image_manager, self.ui)
         self.setup_connections()
 
     def setup_connections(self):

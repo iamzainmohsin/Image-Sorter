@@ -1,26 +1,31 @@
-from imports import os, QIcon, ThumbnailTask, Qt, QImage, QListWidget, QListWidgetItem, QThreadPool, QFileDialog, thumbnail_utils
+from imports import os, QIcon, ThumbnailTask, Qt, QStatusBar, QListWidget, QListWidgetItem, QThreadPool, QFileDialog, thumbnail_utils
 
 
 class SidebarManager:
-    def __init__(self, main_window, image_manager, list_widget:QListWidget):
+    STATUS_BAR_TIME = 5000
+    def __init__(self, statusbar:QStatusBar, main_window, image_manager, list_widget:QListWidget):
+        self.statusbar = statusbar
         self.list_widget = list_widget
         self.image_manager = image_manager
         self.main_window = main_window
         self.thumbnail_cache = {}
         self.thumbnail_size = 30
+        self.statusbar.showMessage("Ready to import a folder...", 0)
 
     #Removes the image:
     def remove_image(self):
         item_to_remove = self.list_widget.currentItem()
         
         if item_to_remove is None:
-            print("No item to remove")
+            self.statusbar.showMessage("No item to remove", self.STATUS_BAR_TIME)
+            # print("No item to remove")
             return
         
         path = item_to_remove.data(Qt.ItemDataRole.UserRole)
 
         if path in self.image_manager.selected_images:
             self.image_manager.selected_images.remove(path)
+            self.statusbar.showMessage(f"Removed image {path}", self.STATUS_BAR_TIME)
             
         self.list_widget.takeItem(self.list_widget.row(item_to_remove))
 
@@ -28,7 +33,8 @@ class SidebarManager:
     #Saves the image:
     def save_images(self):
         if self.list_widget.count() == 0:
-            print("No items to save")
+            self.statusbar.showMessage("No items to save", self.STATUS_BAR_TIME)
+            # print("No items to save")
             return
         
         target_folder = QFileDialog.getExistingDirectory(self.main_window, "Select Folder to Save Images")
@@ -52,11 +58,13 @@ class SidebarManager:
         
 
         if not file_path:
-            print("No selected images to add")
+            self.statusbar.showMessage("No selected images to add", self.STATUS_BAR_TIME)
+            # print("No selected images to add")
             return
 
         if file_path in self.image_manager.selected_images:
-            print(f"Image already selected: {file_path}")
+            self.statusbar.showMessage(f"Image already selected: {file_path}", self.STATUS_BAR_TIME)
+            # print(f"Image already selected: {file_path}")
             return
         
         self.image_manager.selected_images.append(file_path)

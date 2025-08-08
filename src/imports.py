@@ -1,6 +1,6 @@
 # imports.py
 # PyQt6 Core and GUI Elements
-from PyQt6.QtWidgets import QFileDialog, QListWidgetItem, QListWidget
+from PyQt6.QtWidgets import QFileDialog, QListWidgetItem, QListWidget, QStatusBar
 from PyQt6.QtGui import QPixmap, QIcon, QImage
 from PyQt6.QtCore import Qt, QSize, QTimer, QByteArray, QObject, QRunnable, QThreadPool, pyqtSignal, pyqtSlot, Qt
 

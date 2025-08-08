@@ -1,7 +1,9 @@
-from imports import os, QTimer, QPixmap, cv2, QImage, ThreadPoolExecutor, image_utils, QFileDialog
+from imports import os, QTimer, QPixmap, cv2, QImage, ThreadPoolExecutor, image_utils, QFileDialog, QStatusBar
 
 class ImageDisplay:
-    def __init__(self, main_window, image_manager, ui):
+    STATUS_BAR_TIME = 5000
+    def __init__(self, statusbar:QStatusBar, main_window, image_manager, ui):
+        self.statusbar = statusbar
         self.image_manager = image_manager
         self.ui = ui
         self.main_window = main_window
@@ -45,13 +47,16 @@ class ImageDisplay:
     def import_folder(self):
         root_folder = QFileDialog.getExistingDirectory(self.main_window, "Select Main Folder")
         if not root_folder:
-            print("Folder selection canceled")
+            self.statusbar.showMessage("Folder selection canceled", self.STATUS_BAR_TIME)
+            # print("Folder selection canceled")
             return
         success = self.image_manager.import_folder(root_folder)
         if success:
             self.show_current_image()
+            self.statusbar.showMessage(f"Folders imported successfully", self.STATUS_BAR_TIME)
         else:
-            print("No valid images found.")
+            self.statusbar.showMessage("No valid images found", self.STATUS_BAR_TIME)
+            # print("No valid images found.")
 
     
     def show_current_image(self):
@@ -62,7 +67,7 @@ class ImageDisplay:
             self.ui.folder_label.setText("Folder: —")
             self.ui.image_label.setText("Image: —")
             self.image_display.clear()
-            # self.image_display.setText("Folder seems to be empty")
+            self.image_display.setText("Folder seems to be empty")
             return 
 
 
