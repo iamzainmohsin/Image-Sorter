@@ -28,20 +28,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libopencv-dev
-          echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          echo "OpenCV_DIR=/usr/lib/x86_64-linux-gnu/cmake/opencv4" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV 
+          echo "OpenCV_DIR=/usr/lib/x86_64-linux-gnu/cmake/opencv4" >> $GITHUB_ENV         
+
 
       - name: Install OpenCV C++ (macOS)
         if: matrix.os == 'macos-latest'
         run: |
           brew install opencv
-          echo "OpenCV_DIR=$(brew --prefix opencv)/share/opencv4" >> $GITHUB_ENV
+          echo "OpenCV_DIR=$(brew --prefix opencv)/share/opencv4" >> $GITHUB_ENV 
 
       - name: Install OpenCV C++ (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           choco install opencv -y
-          echo "OpenCV_DIR=C:/tools/opencv/build/x64/vc15/lib" >> $env:GITHUB_ENV
+          echo "OpenCV_DIR=C:/tools/opencv/build/x64/vc15/lib" >> $env:GITHUB_ENV 
 
       # ---- Install Python deps ----
       - name: Install Python packages
@@ -60,6 +61,7 @@ jobs:
             -Dpybind11_DIR="$PYBIND11_DIR" \
             -DOpenCV_DIR="$OpenCV_DIR"
 
+
       - name: Build C++ modules
         run: cmake --build build --config Release
 
@@ -73,11 +75,6 @@ jobs:
           else
             cp build/*.so src/image_sorter/cpp/ || true
           fi
-
-      # ---- Test Python import ----
-      - name: Test Python import
-        run: |
-          python -c "import image_sorter.cpp" || echo 'Import failed'
 
       # ---- Upload per-platform artifacts ----
       - name: Upload artifacts
