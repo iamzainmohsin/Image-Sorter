@@ -1,0 +1,72 @@
+name: Build pybind11 modules for all OS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"  # match your local Python version
+
+      - name: Install pybind11 and OpenCV
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pybind11 opencv-python
+
+      - name: Configure CMake
+        run: cmake -S cpp -B build
+
+      - name: Build C++ modules
+        run: cmake --build build --config Release
+
+      - name: Copy built modules to project folder
+        run: |
+          mkdir -p image_sorter/cpp
+          cp build/*image_utils* image_sorter/cpp/ || true
+          cp build/*thumbnail_utils* image_sorter/cpp/ || true
+        shell: bash
+
+      - name: Upload artifacts per platform
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ runner.os }}
+          path: image_sorter/cpp/*
+
+  package:
+    name: Package all builds into one ZIP
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download all OS builds
+        uses: actions/download-artifact@v4
+        with:
+          path: builds
+
+      - name: Create unified ZIP
+        run: |
+          mkdir final
+          mv builds/build-Ubuntu* final/linux
+          mv builds/build-macOS* final/macos
+          mv builds/build-Windows* final/windows
+          zip -r compiled_modules.zip final
+
+      - name: Upload unified ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled_modules
+          path: compiled_modules.zip
