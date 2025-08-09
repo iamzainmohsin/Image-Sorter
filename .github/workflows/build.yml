@@ -3,7 +3,7 @@ name: Build pybind11 modules for all OS
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # manual trigger option
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"  # match your local version
+          python-version: "3.11"
 
       # ---- Install OpenCV C++ Dev for each OS ----
       - name: Install OpenCV C++ (Linux)
@@ -38,11 +38,8 @@ jobs:
       - name: Install OpenCV C++ (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          curl -L -o opencv.zip https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.zip
-          mkdir C:/opencv
-          tar -xf opencv.zip -C C:/opencv --strip-components=1
-          echo "OpenCV_DIR=C:/opencv/build" >> $GITHUB_ENV
-
+          choco install opencv -y
+          echo "OpenCV_DIR=C:/tools/opencv/build" >> $env:GITHUB_ENV
 
       # ---- Install Python deps ----
       - name: Install Python packages
