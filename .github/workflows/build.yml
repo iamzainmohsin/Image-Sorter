@@ -49,12 +49,16 @@ jobs:
 
       # ---- Configure and Build ----
       - name: Configure CMake
-        run: cmake -S src/image_sorter/cpp -B build -DCMAKE_BUILD_TYPE=Release
+        shell: bash
+        run: |
+          PYBIND11_DIR=$(python -m pybind11 --cmakedir)
+          echo "Using pybind11_DIR=$PYBIND11_DIR"
+          cmake -S src/image_sorter/cpp -B build -DCMAKE_BUILD_TYPE=Release -Dpybind11_DIR="$PYBIND11_DIR"
 
       - name: Build C++ modules
         run: cmake --build build --config Release
 
-      # ---- Copy compiled modules into repo folder ----
+      # ---- Copy compiled modules into src folder ----
       - name: Copy built modules to project folder
         run: |
           mkdir -p src/image_sorter/cpp
@@ -62,13 +66,12 @@ jobs:
           cp build/*thumbnail_utils* src/image_sorter/cpp/ || true
         shell: bash
 
-
       # ---- Upload per-platform artifacts ----
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ runner.os }}
-          path: image_sorter/cpp/*
+          path: src/image_sorter/cpp/*
 
   package:
     name: Package all builds into one ZIP
