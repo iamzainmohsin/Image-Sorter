@@ -1,111 +1,48 @@
-name: Build pybind11 modules for all OS
+name: Build Windows pybind11 extensions
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+  build-windows:
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.12"
-          check-latest: true
+          python-version: 3.12
 
-      - name: Ensure pip is installed
-        run: python -m ensurepip --upgrade
-
-      # ---- Install OpenCV C++ Dev for each OS ----
-      - name: Install OpenCV C++ (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libopencv-dev
-          echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV 
-          echo "OpenCV_DIR=/usr/lib/x86_64-linux-gnu/cmake/opencv4" >> $GITHUB_ENV         
-
-      - name: Install OpenCV C++ (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install opencv
-          echo "OpenCV_DIR=$(brew --prefix opencv)/share/opencv4" >> $GITHUB_ENV 
-
-      - name: Install OpenCV C++ (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install opencv -y
-          echo "OpenCV_DIR=C:/tools/opencv/build/x64/vc15/lib" >> $env:GITHUB_ENV 
-
-      # ---- Install Python deps ----
-      - name: Install Python packages
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pybind11
+          pip install pybind11
+          pip install -r requirements.txt
 
-      # ---- Configure and Build ----
-      - name: Configure CMake
-        shell: bash
+      - name: Install OpenCV via vcpkg
         run: |
-          PYBIND11_DIR=$(python -m pybind11 --cmakedir)
-          echo "Using pybind11_DIR=$PYBIND11_DIR"
-          cmake -S src/image_sorter/cpp -B build \
-            -DCMAKE_BUILD_TYPE=Release \
-            -Dpybind11_DIR="$PYBIND11_DIR" \
-            -DOpenCV_DIR="$OpenCV_DIR"
+          git clone https://github.com/microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+          .\vcpkg\vcpkg install opencv
+          setx VCPKG_ROOT "%CD%\vcpkg"
 
-      - name: Build C++ modules
-        run: cmake --build build --config Release
-
-      # ---- Copy compiled modules into src folder ----
-      - name: Copy built modules to project folder
-        shell: bash
+      - name: Configure and build with CMake
         run: |
-          mkdir -p src/image_sorter/cpp
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            cp build/Release/*.pyd src/image_sorter/cpp/ || true
-          else
-            cp build/*.so src/image_sorter/cpp/ || true
-          fi
+          mkdir build
+          cd build
+          cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=%CD%\..\vcpkg\scripts\buildsystems\vcpkg.cmake
+          cmake --build . --config Release
 
-      # ---- Upload per-platform artifacts ----
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload built extensions
+        uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.os }}
-          path: src/image_sorter/cpp/*
-
-  package:
-    name: Package all builds into one ZIP
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download all OS builds
-        uses: actions/download-artifact@v4
-        with:
-          path: builds
-
-      - name: Create unified ZIP
-        run: |
-          mkdir -p final/linux final/macos final/windows
-          mv builds/build-ubuntu-latest/* final/linux/ || echo "Linux build missing"
-          mv builds/build-macos-latest/* final/macos/ || echo "macOS build missing"
-          mv builds/build-windows-latest/* final/windows/ || echo "Windows build missing"
-          zip -r compiled_modules.zip final
-
-      - name: Upload unified ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: compiled_modules
-          path: compiled_modules.zip
+          name: windows-pyd-modules
+          path: |
+            build/Release/image_utils.pyd
+            build/Release/thumbnail_utils.pyd
