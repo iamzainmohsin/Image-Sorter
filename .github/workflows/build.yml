@@ -70,7 +70,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ runner.os }}
+          name: build-${{ matrix.os }}
           path: src/image_sorter/cpp/*
 
   package:
@@ -87,9 +87,9 @@ jobs:
       - name: Create unified ZIP
         run: |
           mkdir final
-          mv builds/build-Ubuntu* final/linux
-          mv builds/build-macOS* final/macos
-          mv builds/build-Windows* final/windows
+          mv builds/build-ubuntu-latest final/linux
+          mv builds/build-macos-latest final/macos
+          mv builds/build-windows-latest final/windows
           zip -r compiled_modules.zip final
 
       - name: Upload unified ZIP
