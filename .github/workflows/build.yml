@@ -49,7 +49,7 @@ jobs:
 
       # ---- Configure and Build ----
       - name: Configure CMake
-        run: cmake -S cpp -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S src/image_sorter/cpp -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build C++ modules
         run: cmake --build build --config Release
@@ -57,10 +57,11 @@ jobs:
       # ---- Copy compiled modules into repo folder ----
       - name: Copy built modules to project folder
         run: |
-          mkdir -p image_sorter/cpp
-          cp build/*image_utils* image_sorter/cpp/ || true
-          cp build/*thumbnail_utils* image_sorter/cpp/ || true
+          mkdir -p src/image_sorter/cpp
+          cp build/*image_utils* src/image_sorter/cpp/ || true
+          cp build/*thumbnail_utils* src/image_sorter/cpp/ || true
         shell: bash
+
 
       # ---- Upload per-platform artifacts ----
       - name: Upload artifacts
