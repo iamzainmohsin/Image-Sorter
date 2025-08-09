@@ -1,3 +1,8 @@
+#ifdef _WIN32
+    #include <BaseTsd.h>
+    typedef SSIZE_T ssize_t;
+#endif
+
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 #include <opencv2/opencv.hpp>
