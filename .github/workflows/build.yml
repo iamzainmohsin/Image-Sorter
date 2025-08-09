@@ -62,8 +62,11 @@ jobs:
       - name: Copy built modules to project folder
         run: |
           mkdir -p src/image_sorter/cpp
-          cp build/*image_utils* src/image_sorter/cpp/ || true
-          cp build/*thumbnail_utils* src/image_sorter/cpp/ || true
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cp build/Release/*.pyd src/image_sorter/cpp/ || true
+          else
+            cp build/*.so src/image_sorter/cpp/ || true
+          fi
         shell: bash
 
       # ---- Upload per-platform artifacts ----
@@ -87,9 +90,9 @@ jobs:
       - name: Create unified ZIP
         run: |
           mkdir final
-          mv builds/build-ubuntu-latest final/linux
-          mv builds/build-macos-latest final/macos
-          mv builds/build-windows-latest final/windows
+          mv builds/build-ubuntu-latest final/linux || echo "Linux build missing"
+          mv builds/build-macos-latest final/macos || echo "macOS build missing"
+          mv builds/build-windows-latest final/windows || echo "Windows build missing"
           zip -r compiled_modules.zip final
 
       - name: Upload unified ZIP
