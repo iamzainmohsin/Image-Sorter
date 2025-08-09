@@ -21,6 +21,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          check-latest: true
+
+      - name: Ensure pip is installed
+        run: python -m ensurepip --upgrade
 
       # ---- Install OpenCV C++ Dev for each OS ----
       - name: Install OpenCV C++ (Linux)
@@ -30,7 +34,6 @@ jobs:
           sudo apt-get install -y libopencv-dev
           echo "LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV 
           echo "OpenCV_DIR=/usr/lib/x86_64-linux-gnu/cmake/opencv4" >> $GITHUB_ENV         
-
 
       - name: Install OpenCV C++ (macOS)
         if: matrix.os == 'macos-latest'
@@ -60,7 +63,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -Dpybind11_DIR="$PYBIND11_DIR" \
             -DOpenCV_DIR="$OpenCV_DIR"
-
 
       - name: Build C++ modules
         run: cmake --build build --config Release
