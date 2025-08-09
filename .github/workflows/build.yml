@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       # ---- Install OpenCV C++ Dev for each OS ----
       - name: Install OpenCV C++ (Linux)
@@ -60,6 +60,7 @@ jobs:
 
       # ---- Copy compiled modules into src folder ----
       - name: Copy built modules to project folder
+        shell: bash
         run: |
           mkdir -p src/image_sorter/cpp
           if [ "${{ runner.os }}" = "Windows" ]; then
@@ -67,7 +68,6 @@ jobs:
           else
             cp build/*.so src/image_sorter/cpp/ || true
           fi
-        shell: bash
 
       # ---- Upload per-platform artifacts ----
       - name: Upload artifacts
@@ -89,10 +89,10 @@ jobs:
 
       - name: Create unified ZIP
         run: |
-          mkdir final
-          mv builds/build-ubuntu-latest final/linux || echo "Linux build missing"
-          mv builds/build-macos-latest final/macos || echo "macOS build missing"
-          mv builds/build-windows-latest final/windows || echo "Windows build missing"
+          mkdir -p final/linux final/macos final/windows
+          mv builds/build-ubuntu-latest/* final/linux/ || echo "Linux build missing"
+          mv builds/build-macos-latest/* final/macos/ || echo "macOS build missing"
+          mv builds/build-windows-latest/* final/windows/ || echo "Windows build missing"
           zip -r compiled_modules.zip final
 
       - name: Upload unified ZIP
