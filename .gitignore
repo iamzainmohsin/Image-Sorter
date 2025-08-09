@@ -1,9 +1,11 @@
 # CMake build
 build/
+dist/
 /CMakeFiles/
 /CMakeCache.txt
 cmake_install.cmake
 Makefile
+
 
 # Compiled modules
 *.so
