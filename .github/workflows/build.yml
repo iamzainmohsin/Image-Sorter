@@ -3,7 +3,7 @@ name: Build pybind11 modules for all OS
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # allows manual trigger from GitHub UI
+  workflow_dispatch:  # manual trigger option
 
 jobs:
   build:
@@ -20,19 +20,41 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"  # match your local Python version
+          python-version: "3.11"  # match your local version
 
-      - name: Install pybind11 and OpenCV
+      # ---- Install OpenCV C++ Dev for each OS ----
+      - name: Install OpenCV C++ (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopencv-dev
+
+      - name: Install OpenCV C++ (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install opencv
+          echo "export OpenCV_DIR=$(brew --prefix opencv)/share/opencv4" >> $GITHUB_ENV
+
+      - name: Install OpenCV C++ (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install opencv --version=4.5.1 --no-progress
+          echo "OpenCV_DIR=C:/tools/opencv/build" >> $GITHUB_ENV
+
+      # ---- Install Python deps ----
+      - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pybind11 opencv-python
+          python -m pip install pybind11
 
+      # ---- Configure and Build ----
       - name: Configure CMake
-        run: cmake -S cpp -B build
+        run: cmake -S cpp -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build C++ modules
         run: cmake --build build --config Release
 
+      # ---- Copy compiled modules into repo folder ----
       - name: Copy built modules to project folder
         run: |
           mkdir -p image_sorter/cpp
@@ -40,7 +62,8 @@ jobs:
           cp build/*thumbnail_utils* image_sorter/cpp/ || true
         shell: bash
 
-      - name: Upload artifacts per platform
+      # ---- Upload per-platform artifacts ----
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ runner.os }}
