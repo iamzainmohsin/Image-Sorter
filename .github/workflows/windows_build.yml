@@ -47,9 +47,11 @@ jobs:
 
     - name: Configure CMake
       run: |
+        $toolchain = "${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
         cmake -S ./src/image_sorter/cpp -B build -G "Visual Studio 17 2022" -A x64 `
-          -DCMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake `
-          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${{ github.workspace }}\output
+          -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
+          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="${{ github.workspace }}\output"
+
 
     - name: Build modules
       run: cmake --build build --config Release
