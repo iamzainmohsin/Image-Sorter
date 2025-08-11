@@ -1,10 +1,10 @@
-name: Build C++ .pyd modules on Windows
+name: CMake Configure Test
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    paths:
+      - 'src/image_sorter/cpp/**'
+      - '.github/workflows/cmake-configure-test.yml'
 
 jobs:
   cmake-configure-test:
@@ -12,9 +12,30 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # (setup conda, python, pybind11, vcpkg, etc.)
+      - name: Clone vcpkg
+        run: |
+          if (-not (Test-Path "vcpkg")) {
+            git clone https://github.com/microsoft/vcpkg.git vcpkg
+          } else {
+            Write-Host "vcpkg already cloned"
+          }
+        shell: pwsh
 
-      - name: CMake configure only
+      - name: Bootstrap vcpkg
+        shell: pwsh
+        run: .\vcpkg\bootstrap-vcpkg.bat
+
+      - name: Debug vcpkg toolchain path
+        shell: pwsh
+        run: |
+          $toolchain = "${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
+          if (Test-Path $toolchain) {
+            Write-Host "Toolchain file found!"
+          } else {
+            Write-Error "Toolchain file NOT found at $toolchain"
+          }
+
+      - name: Configure CMake
         shell: pwsh
         run: |
           $toolchain = "${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
@@ -22,9 +43,8 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
             -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="${{ github.workspace }}\output"
 
-      - name: Upload CMake cache
+      - name: Upload build folder artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cmake-configure-logs
+          name: cmake-build-folder
           path: build
-
