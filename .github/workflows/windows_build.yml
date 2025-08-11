@@ -1,0 +1,61 @@
+name: Build C++ .pyd modules on Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Cache conda packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.conda/pkgs
+        key: conda-packages-${{ runner.os }}-${{ hashFiles('environment.yml') }}
+
+    - name: Cache vcpkg
+      uses: actions/cache@v3
+      with:
+        path: vcpkg/installed
+        key: vcpkg-${{ runner.os }}-opencv-4.12.0
+        restore-keys: |
+          vcpkg-${{ runner.os }}-
+
+    - name: Set up Miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: 3.12.3
+        activate-environment: cppbuild
+        environment-file: environment.yml
+        auto-update-conda: true
+        use-mamba: false
+
+    - name: Bootstrap vcpkg and install OpenCV
+      shell: pwsh
+      run: |
+        if (-not (Test-Path vcpkg)) {
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
+        }
+        .\vcpkg\vcpkg install opencv[core]:x64-windows
+
+    - name: Configure CMake
+      run: |
+        cmake -S ./src/image_sorter/cpp -B build -G "Visual Studio 17 2022" -A x64 `
+          -DCMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake `
+          -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${{ github.workspace }}\output
+
+    - name: Build modules
+      run: cmake --build build --config Release
+
+    - name: Upload .pyd artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-pyd-modules
+        path: output/*.pyd
