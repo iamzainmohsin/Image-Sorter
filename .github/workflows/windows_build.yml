@@ -12,20 +12,27 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Clone vcpkg
-        run: |
-          if (-not (Test-Path "vcpkg")) {
-            git clone https://github.com/microsoft/vcpkg.git vcpkg
-          } else {
-            Write-Host "vcpkg already cloned"
-          }
+      - name: Print working directory
         shell: pwsh
+        run: pwd
+
+      - name: Clone vcpkg fresh
+        run: git clone --depth=1 https://github.com/microsoft/vcpkg.git vcpkg
+        shell: pwsh
+
+      - name: List vcpkg contents
+        shell: pwsh
+        run: |
+          Write-Host "Listing vcpkg dir:"
+          Get-ChildItem -Force "${{ github.workspace }}\vcpkg"
+          Write-Host "Listing scripts/buildsystems dir:"
+          Get-ChildItem -Force "${{ github.workspace }}\vcpkg\scripts\buildsystems"
 
       - name: Bootstrap vcpkg
         shell: pwsh
         run: .\vcpkg\bootstrap-vcpkg.bat
 
-      - name: Debug vcpkg toolchain path
+      - name: Check toolchain path exists
         shell: pwsh
         run: |
           $toolchain = "${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"
@@ -43,8 +50,9 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$toolchain" `
             -DCMAKE_LIBRARY_OUTPUT_DIRECTORY="${{ github.workspace }}\output"
 
-      - name: Upload build folder artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: cmake-build-folder
           path: build
+
